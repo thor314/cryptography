@@ -13,6 +13,8 @@
 # and an addition operation over ciphertexts.
 
 # default RSA key bit length, gives more than 128 bits of security.
+import random
+from crypto_utils import powmod
 from crypto_utils import generate_n_p_q
 DEFAULT_KEYSIZE = 3072
 
@@ -47,20 +49,28 @@ class PublicKey():
         self.n_square = n*n  # efficiency purposes
         self.max_int = n // 3 - 1
 
-    # why hex? Fiddling with indices here
+    def encrypt(self, plaintext):
+        """encrypt plaintext, output ciphertext.
+        concisely: c = g**e * r**n mod n**2
+        less concisely:
+        ciphertext = nude_ciphertext * obfuscator mod n**2
+        """
+        assert(isinstance(plaintext, Plaintext))
+        assert(plaintext.message < self.max_int)
+
+        nude_ciphertext = pow(self.g, plaintext.message, self.n_square)
+        r = self.get_random_lt_n()
+        obfuscator = pow(r, self.n, self.n_square)
+        return nude_ciphertext * obfuscator % self.n_square
+
+    def get_random_lt_n(self):
+        """Return a random number less than n"""
+        # systemRandom is os independent
+        return random.SystemRandom().randrange(1, self.n)
+
     def __repr__(self):
         public_key_hash = hex(hash(self))  # [2:]
         return "<PublicKey {}>".format(public_key_hash[:12])
-
-    def encrypt(self, value):
-        # if isinstance(value, Plaintext):
-        #     plaintext = value
-        # else:
-        #     plaintext = Plaintext(value)
-
-        # return Ciphertext(None)
-        pass
-
 
 class PrivateKey():
     """A private key and associated decryption methods"""
@@ -79,7 +89,9 @@ class Plaintext():
     """Some integer message, pass input validation over it"""
 
     def __init__(self, message):
-        # todo: validate message
+        if not isinstance(message, int):
+            raise TypeError('Expected message type int\nGot message type %s'
+                            % type(message))
         self.message = message
 
 
