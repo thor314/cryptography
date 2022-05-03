@@ -1,6 +1,5 @@
 # cryptography utilities
 from Crypto.Util import number
-# import random
 import os
 
 
