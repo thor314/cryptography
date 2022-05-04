@@ -14,19 +14,24 @@
 
 # default RSA key bit length, gives more than 128 bits of security.
 import random
-from crypto_utils import powmod
-from crypto_utils import generate_n_p_q
+from crypto_utils import generate_n_p_q, invert
 DEFAULT_KEYSIZE = 3072
 
 
 def main():
     public_key, private_key = generate_keypair()
+    print("public key: %s" % public_key)
+    print("private key: %s" % private_key)
     plaintext = Plaintext(2357)
+    print("plaintext: ", plaintext)
     ciphertext = public_key.encrypt(plaintext)
+    # print("ciphertext: ", ciphertext)
     doubled_ciphertext = ciphertext + ciphertext
+    # print("doubled ciphertext: ", doubled_ciphertext)
     doubled_message = private_key.decrypt(doubled_ciphertext)
+    print("doubled_message: ", doubled_message)
 
-    if doubled_message == 2357*2:
+    if doubled_message.message == 2357*2:
         print("SUCCESS")
     else:
         print("FAIL")
@@ -36,7 +41,7 @@ def generate_keypair(n_bits=DEFAULT_KEYSIZE):
     """Generate a pair of classes: PublicKey and PrivateKey"""
     n, p, q = generate_n_p_q(n_bits)
     public_key = PublicKey(n)
-    private_key = PrivateKey(public_key)
+    private_key = PrivateKey(public_key, p, q)
     return public_key, private_key
 
 
@@ -48,6 +53,10 @@ class PublicKey():
         self.n = n
         self.n_square = n*n  # efficiency purposes
         self.max_int = n // 3 - 1
+
+    def __repr__(self):
+        public_key_hash = hex(hash(self))  # [2:]
+        return "<PublicKey {}>".format(public_key_hash[:12])
 
     def encrypt(self, plaintext):
         """encrypt plaintext, output ciphertext.
@@ -61,28 +70,73 @@ class PublicKey():
         nude_ciphertext = pow(self.g, plaintext.message, self.n_square)
         r = self.get_random_lt_n()
         obfuscator = pow(r, self.n, self.n_square)
-        return nude_ciphertext * obfuscator % self.n_square
+        return Ciphertext(nude_ciphertext * obfuscator % self.n_square, self)
 
     def get_random_lt_n(self):
         """Return a random number less than n"""
         # systemRandom is os independent
         return random.SystemRandom().randrange(1, self.n)
 
-    def __repr__(self):
-        public_key_hash = hex(hash(self))  # [2:]
-        return "<PublicKey {}>".format(public_key_hash[:12])
 
 class PrivateKey():
     """A private key and associated decryption methods"""
 
-    def __init__(self, n):
-        self.g = n+1  # the convenient generator
-        self.n = n
-        self.n_square = n*n  # efficiency purposes
-        self.max_int = n // 3 - 1
+    def __init__(self, public_key, p, q):
+        if not p*q == public_key.n:
+            raise ValueError(
+                'given public key does not match the given p and q.')
+        if p == q:
+            # check that p and q are different,
+            # otherwise we can't compute p^-1 mod q
+            raise ValueError('p and q have to be different')
+        self.public_key = public_key
+        # wlog, let p < q
+        self.p = min(p, q)
+        self.q = max(p, q)
+        # Pallier method to compute efficient inverses, page 12
+        self.psquare = self.p * self.p
+        self.qsquare = self.q * self.q
+        self.p_inverse = invert(self.p, self.q)
+        self.hp = self.h_function(self.p, self.psquare)
+        self.hq = self.h_function(self.q, self.qsquare)
+
+    def h_function(self, x, xsquare):
+        l_output = self.l_function(pow(self.public_key.g, x - 1, xsquare), x)
+        return invert(l_output, x)
+
+    def l_function(self, x, p):
+        return (x - 1) // p
+
+    def __repr__(self):
+        """don't print the private info, hehe"""
+        pub_repr = repr(self.public_key)
+        return "<PrivateKey for public key: {}>".format(pub_repr)
 
     def decrypt(self, ciphertext):
-        pass
+        if not isinstance(ciphertext, Ciphertext):
+            raise TypeError('Expected ciphertext to be an Ciphertext'
+                            ' not: %s' % type(ciphertext))
+        if self.public_key != ciphertext.public_key:
+            raise ValueError('ciphertext was encrypted against a '
+                             'different key!')
+
+        # construct plaintext
+        qq = pow(ciphertext.ciphertext, self.q-1, self.qsquare)
+        decrypt_to_q = self.l_function(qq, self.q) * self.hq % self.q
+        pp = pow(ciphertext.ciphertext, self.p-1, self.psquare)
+        decrypt_to_p = self.l_function(pp, self.p) * self.hp % self.p
+
+        message = self.crt(decrypt_to_p, decrypt_to_q)
+        return Plaintext(message)
+
+    def crt(self, mp, mq):
+        """Chinese Remainder Theorem. Used in decryption.
+        Returns m % pq, given
+        mp = m % p
+        mq = m % q"""
+
+        u = mq - mp * self.p_inverse % self.q
+        return mp + (u * self.p)
 
 
 class Plaintext():
@@ -94,15 +148,27 @@ class Plaintext():
                             % type(message))
         self.message = message
 
+    def __repr__(self):
+        return "<Plaintext: {}>".format(self.message)
+
+    def __eq__(self, other):
+        return self.message == other.message
+
 
 class Ciphertext():
     """The Pallier encryption of some plaintext"""
 
-    def __init__(self, encrypted_text):
-        self.encrypted_text = encrypted_text
+    def __init__(self, ciphertext, public_key):
+        self.ciphertext = ciphertext
+        self.public_key = public_key
+
+    def __repr__(self):
+        pub_repr = repr(self.ciphertext)
+        return "<Ciphertext {}>".format(pub_repr)
 
     def __add__(self, other):
-        return self.encrypted_text * other.encrypted_text
+        assert(self.public_key == other.public_key)
+        return Ciphertext(self.ciphertext * other.ciphertext, self.public_key)
 
 
 if __name__ == "__main__":
