@@ -22,3 +22,6 @@
 [submodule "quadratic-span-programs"]
 	path = quadratic-span-programs
 	url = git@github.com:thor314/quadratic-span-programs.git
+[submodule "protogalaxy"]
+	path = protogalaxy
+	url = git@github.com:thor314/protogalaxy.git
