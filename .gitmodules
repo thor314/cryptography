@@ -34,3 +34,6 @@
 [submodule "sha2"]
 	path = sha2
 	url = git@github.com:thor314/sha2.git
+[submodule "circom_play"]
+	path = circom_play
+	url = git@github.com:thor314/circom_play.git
