@@ -25,3 +25,6 @@
 [submodule "protogalaxy"]
 	path = protogalaxy
 	url = git@github.com:thor314/protogalaxy.git
+[submodule "uncloak-hw"]
+	path = uncloak-hw
+	url = git@github.com:thor314/uncloak-hw.git
