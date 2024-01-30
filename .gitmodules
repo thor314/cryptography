@@ -28,3 +28,6 @@
 [submodule "uncloak-hw"]
 	path = uncloak-hw
 	url = git@github.com:thor314/uncloak-hw.git
+[submodule "zk-links"]
+	path = zk-links
+	url = git@github.com:thor314/zk-links.git
