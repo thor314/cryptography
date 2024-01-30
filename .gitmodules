@@ -16,3 +16,6 @@
 [submodule "chacha"]
 	path = chacha
 	url = git@github.com:thor314/chacha.git
+[submodule "pebble-stark"]
+	path = pebble-stark
+	url = git@github.com:thor314/pebble-stark.git
