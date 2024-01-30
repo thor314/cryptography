@@ -19,3 +19,6 @@
 [submodule "pebble-stark"]
 	path = pebble-stark
 	url = git@github.com:thor314/pebble-stark.git
+[submodule "quadratic-span-programs"]
+	path = quadratic-span-programs
+	url = git@github.com:thor314/quadratic-span-programs.git
