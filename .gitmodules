@@ -1,3 +1,15 @@
 [submodule "pallier-encryption"]
 	path = pallier-encryption
 	url = git@github.com:thor314/pallier-encryption.git
+[submodule "uncloak"]
+	path = uncloak
+	url = git@github.com:thor314/uncloak.git
+[submodule "pazk"]
+	path = pazk
+	url = git@github.com:thor314/pazk.git
+[submodule "ccs-hack"]
+	path = ccs-hack
+	url = git@github.com:thor314/ccs-hack.git
+[submodule "circuit-examples"]
+	path = circuit-examples
+	url = git@github.com:thor314/circuit-examples.git
