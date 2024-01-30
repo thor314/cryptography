@@ -1,0 +1,3 @@
+[submodule "pallier-encryption"]
+	path = pallier-encryption
+	url = git@github.com:thor314/pallier-encryption.git
