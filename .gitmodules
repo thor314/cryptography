@@ -37,3 +37,6 @@
 [submodule "circom_play"]
 	path = circom_play
 	url = git@github.com:thor314/circom_play.git
+[submodule "rust-stark-anatomy"]
+	path = rust-stark-anatomy
+	url = git@github.com:thor314/rust-stark-anatomy.git
